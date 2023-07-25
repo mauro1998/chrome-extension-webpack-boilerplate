@@ -1,38 +1,38 @@
-var WebpackDevServer = require("webpack-dev-server"),
-    webpack = require("webpack"),
-    config = require("../webpack.config"),
-    env = require("./env"),
-    path = require("path");
+const WebpackDevServer = require('webpack-dev-server');
+const Webpack = require('webpack');
+const path = require('path');
+const config = require('../webpack.config');
+const env = require('./env');
 
-var options = (config.chromeExtensionBoilerplate || {});
-var excludeEntriesToHotReload = (options.notHotReload || []);
+const options = config.chromeExtensionBoilerplate || {};
+const excludeEntriesToHotReload = options.notHotReload || [];
 
-for (var entryName in config.entry) {
+Object.keys(config.entry).forEach((entryName) => {
   if (excludeEntriesToHotReload.indexOf(entryName) === -1) {
-    config.entry[entryName] =
-      [
-        ("webpack-dev-server/client?http://localhost:" + env.PORT),
-        "webpack/hot/dev-server"
-      ].concat(config.entry[entryName]);
+    config.entry[entryName] = [
+      `webpack-dev-server/client?http://localhost:${env.PORT}`,
+      'webpack/hot/dev-server',
+    ].concat(config.entry[entryName]);
   }
-}
+});
 
-config.plugins =
-  [new webpack.HotModuleReplacementPlugin()].concat(config.plugins || []);
+config.plugins = [new Webpack.HotModuleReplacementPlugin()].concat(
+  config.plugins || []
+);
+
+const devServerOptions = {
+  port: env.PORT,
+  static: path.join(__dirname, '../build'),
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+  },
+  open: true,
+};
 
 delete config.chromeExtensionBoilerplate;
 
-var compiler = webpack(config);
-
-var server =
-  new WebpackDevServer(compiler, {
-    hot: true,
-    contentBase: path.join(__dirname, "../build"),
-    sockPort: env.PORT,
-    headers: {
-      "Access-Control-Allow-Origin": "*"
-    },
-    disableHostCheck: true
-  });
-
-server.listen(env.PORT);
+const compiler = Webpack(config, (err) => {
+  if (err) throw err;
+  const server = new WebpackDevServer(devServerOptions, compiler);
+  server.start();
+});
